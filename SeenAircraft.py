@@ -61,13 +61,13 @@ class SeenAircraft:
                     # Surface position - just update altitude if available
                     if altitude is not None:
                         aircraft._alt = altitude
-                        aircraft._update_timestamp()
+                        aircraft.touch()
                         logger.debug(f"[{icao}]: Surface altitude update: -> {aircraft.alt}")
                     else:
-                        aircraft._update_timestamp()
+                        aircraft.touch()
             else:
                 # No raw message but still count it
-                aircraft._update_timestamp()
+                aircraft.touch()
                 logger.debug(f"[{icao}]: Position message without raw data")
 
         elif msg_type == "velocity":
@@ -91,7 +91,7 @@ class SeenAircraft:
 
             # If no velocity data, still count the message
             if not any(k in data for k in ["speed", "heading", "vertical_rate", "velocity_type"]):
-                aircraft._update_timestamp()
+                aircraft.touch()
 
         elif msg_type in ["surveillance_alt", "commb_alt", "short_acas", "long_acas"]:
             # Surveillance messages with altitude
@@ -99,10 +99,10 @@ class SeenAircraft:
             if "altitude" in data and data["altitude"] is not None:
                 old_alt = aircraft.alt
                 aircraft._alt = data["altitude"]
-                aircraft._update_timestamp()
+                aircraft.touch()
                 logger.debug(f"[{icao}]: Surveillance altitude update: {old_alt} -> {aircraft.alt}")
             else:
-                aircraft._update_timestamp()
+                aircraft.touch()
                 logger.debug(f"[{icao}]: {msg_type} without altitude")
 
         elif msg_type == "surveillance_identity":
@@ -110,17 +110,17 @@ class SeenAircraft:
             logger.debug(f"[{icao}]: {msg_type} message")
             if "squawk" in data and data["squawk"] is not None:
                 logger.debug(f"[{icao}]: Squawk code: {data['squawk']}")
-            aircraft._update_timestamp()
+            aircraft.touch()
 
         elif msg_type in ["status", "target_state", "operation_status", "all_call", "adsb_other", "unknown_df"]:
             # Other message types - still count them
             logger.debug(f"[{icao}]: {msg_type} message with data: {data}")
-            aircraft._update_timestamp()
+            aircraft.touch()
 
         else:
             # Completely unknown message type - but still count it!
             logger.warning(f"[{icao}]: UNKNOWN message type: {msg_type} with data: {data}")
-            aircraft._update_timestamp()
+            aircraft.touch()
 
         # Show completion status
         complete_status = aircraft.is_complete()

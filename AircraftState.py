@@ -182,3 +182,7 @@ class AircraftState:
                 "message_count": self.message_count
             }
         }
+
+    def touch(self):
+        """Public method to update last seen timestamp and increment message count."""
+        self._update_timestamp()
