@@ -2,33 +2,44 @@
 Stream consumer for ADS-B messages.
 Consumes messages from stdin, tracks aircraft states, and outputs complete aircraft to Kafka.
 """
+import os
 import sys
 import time
 import argparse
 from datetime import datetime
+from typing import Optional
 from stream1090.adsb_decoder import decode_message
 from stream1090.SeenAircraft import SeenAircraft
 from loguru import logger
 
-def main():
-    """Main stream consumption loop."""
-    parser = argparse.ArgumentParser(description='Consume ADS-B stream and track aircraft states')
-    parser.add_argument('--log-level', default='INFO',
-                       choices=['TRACE', 'DEBUG', 'INFO', 'WARNING', 'ERROR'],
-                       help='Set logging level')
-    args = parser.parse_args()
 
+def configure_logging(log_level: Optional[str] = "INFO"):
+    """Configure logging for the application.
+
+    Args:
+        log_level: The logging level to use. Defaults to INFO.
+    """
     # Configure loguru logger
     logger.remove()  # Remove default handler
-    logger.add(sys.stderr, level=args.log_level,
+    logger.add(sys.stderr, level=log_level,
                format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | {message}")
 
+
+def consume_ten_ninty_stream(cleanup_interval_seconds: int = 3600):
+    """
+    Consumes a raw dump1090 TCP stream and processes the messages.
+
+    Args:
+        cleanup_interval_seconds: The interval in seconds to cleanup the seen aircraft. Defaults to 3600.
+
+    Usage:
+    nc -u 127.0.0.1 30005 | python streamConsumer.py
+    """
     seen_aircraft = SeenAircraft()
     last_cleanup = time.time()
-    cleanup_interval = 60  # Cleanup every minute
+    cleanup_interval = cleanup_interval_seconds
 
     logger.info("Starting ADS-B stream consumer...")
-    logger.info(f"Log level set to: {args.log_level}")
     logger.info("Listening for messages on stdin...")
 
     for line in sys.stdin:
@@ -64,5 +75,17 @@ def main():
         except Exception as e:
             logger.error(f"Error processing line: {line} | {e}")
 
+
 if __name__ == "__main__":
-    main()
+
+    parser = argparse.ArgumentParser(description='Consume ADS-B stream and track aircraft states')
+    parser.add_argument('--log-level', default='INFO',
+                       choices=['TRACE', 'DEBUG', 'INFO', 'WARNING', 'ERROR'],
+                       help='Set logging level')
+    parser.add_argument('--cleanup-interval', type=int, default=3600,
+                       help='The interval in seconds to cleanup the seen aircraft. Defaults to 3600.')
+    args = parser.parse_args()
+
+    configure_logging(args.log_level)
+    logger.info("Starting stream consumer...")
+    consume_ten_ninty_stream(args.cleanup_interval)
