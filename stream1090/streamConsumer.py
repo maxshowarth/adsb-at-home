@@ -7,7 +7,7 @@ import time
 import argparse
 from datetime import datetime
 from stream1090.adsb_decoder import decode_message
-from SeenAircraft import SeenAircraft
+from stream1090.SeenAircraft import SeenAircraft
 from loguru import logger
 
 def main():

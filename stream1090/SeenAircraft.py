@@ -3,7 +3,7 @@ Class for tracking seen aircraft and updating their states.
 """
 from typing import Dict, Optional
 from datetime import datetime, timezone
-from AircraftState import AircraftState
+from stream1090.AircraftState import AircraftState
 from loguru import logger
 
 class SeenAircraft:
